@@ -12,14 +12,7 @@ from rlgym.utils.state_setters import DefaultState
 from rlgym.utils.terminal_conditions.common_conditions import TimeoutCondition, NoTouchTimeoutCondition, GoalScoredCondition
 from rlgym_tools.sb3_utils import SB3MultipleInstanceEnv
 
-from rlgym.utils.reward_functions.common_rewards.misc_rewards import EventReward
-from rlgym.utils.reward_functions.combined_reward import CombinedReward
-from rlgym.utils.reward_functions.common_rewards.player_ball_rewards import TouchBallReward
-from rlgym.utils.reward_functions.common_rewards.misc_rewards import SaveBoostReward
-from rlgym.utils.reward_functions.common_rewards.ball_goal_rewards import BallYCoordinateReward, VelocityBallToGoalReward
-from rlgym.utils.reward_functions.common_rewards.conditional_rewards import RewardIfClosestToBall, RewardIfTouchedLast
-from rlgym.utils.reward_functions.reward_function import RewardFunction
-
+from bot_name_rewards import BotNameRewards
 
 if __name__ == '__main__':  # Required for multiprocessing
     frame_skip = 8          # Number of ticks to repeat an action
@@ -35,33 +28,15 @@ if __name__ == '__main__':  # Required for multiprocessing
     training_interval = 25_000_000
     mmr_save_frequency = 50_000_000
 
-    # reward_func = RewardFunction()
-
     def exit_save(model):
         model.save("models/exit_save")
 
     def get_match():  # Need to use a function so that each instance can call it and produce their own objects
+        r = BotNameRewards()
         return Match(
             team_size=1,
             tick_skip=frame_skip,
-            reward_function=CombinedReward(
-            (
-                EventReward(
-                    team_goal=100.0,
-                    concede=-100.0,
-                    shot=5.0,
-                    save=30.0,
-                    demo=10.0,
-                    boost_pickup=20.0
-                ),
-                TouchBallReward(),
-                SaveBoostReward(),
-                BallYCoordinateReward(),
-                VelocityBallToGoalReward(),
-                # RewardIfClosestToBall(reward_func),
-                # RewardIfTouchedLast(reward_func)
-            ),
-            (1.0, 0.5, 0.2, 0.1, 0.1)),#, 0.2, 0.2)),
+            reward_function=r.get_reward_function(),
             # self_play=True,  in rlgym 1.2 'self_play' is depreciated. Uncomment line if using an earlier version and comment out spawn_opponents
             spawn_opponents=True,
             terminal_conditions=[TimeoutCondition(fps * 300), NoTouchTimeoutCondition(fps * 45), GoalScoredCondition()],
